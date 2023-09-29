@@ -22,6 +22,8 @@ public class Chip8 implements Runnable {
     private static final byte DISPLAY_WIDTH = 64;
     private static final byte DISPLAY_HEIGHT = 32;
 
+    private static final int VF_REGISTER = 15;
+
     private final Counter programCounter;
     private final Counter delayCounter;
     private final Counter soundCounter;
@@ -37,6 +39,7 @@ public class Chip8 implements Runnable {
     private final Register indexRegister;
 
     private final Map<Integer, Consumer<int[]>> opcodes;
+    private final Map<Integer, Consumer<int[]>> opcodes8xyn;
 
     public Chip8(Counter programCounter, Counter delayCounter, Counter soundCounter,
                  Deque<Integer> programStack, Clock clock, Memory memory, Display display,
@@ -53,8 +56,10 @@ public class Chip8 implements Runnable {
         this.indexRegister = indexRegister;
 
         opcodes = new HashMap<>();
+        opcodes8xyn = new HashMap<>();
 
         initOpcodesMap();
+        initOpcodes8xynMap();
     }
 
     private void initOpcodesMap() {
@@ -74,6 +79,18 @@ public class Chip8 implements Runnable {
         opcodes.put(13, this::opcode_DXYN);
         opcodes.put(14, this::opcode_EXNN);
         opcodes.put(15, this::opcode_FXNN);
+    }
+
+    private void initOpcodes8xynMap() {
+        opcodes.put(0,  this::opcode_8XY0);
+        opcodes.put(1,  this::opcode_8XY1);
+        opcodes.put(2,  this::opcode_8XY2);
+        opcodes.put(3,  this::opcode_8XY3);
+        opcodes.put(4,  this::opcode_8XY4);
+        opcodes.put(5,  this::opcode_8XY5);
+        opcodes.put(6,  this::opcode_8XY6);
+        opcodes.put(7,  this::opcode_8XY7);
+        opcodes.put(14, this::opcode_8XYE);
     }
 
     private int fetch() {
@@ -196,7 +213,103 @@ public class Chip8 implements Runnable {
      * Logical and arithmetic instructions, depending on the last nibble
      */
     private void opcode_8XYN(int[] nibbles) {
-        //TODO
+        opcodes8xyn.get(nibbles[3]).accept(nibbles);
+    }
+
+    /**
+     * VX is set to the value of VY
+     */
+    private void opcode_8XY0(int[] nibbles) {
+      int Yvalue = registers[nibbles[2]].get();
+      registers[nibbles[1]].set(Yvalue);
+    }
+
+    /**
+     * VX is set to the value of VX bitwise OR VY
+     */
+    private void opcode_8XY1(int[] nibbles) {
+        int Xvalue = registers[nibbles[1]].get();
+        int Yvalue = registers[nibbles[2]].get();
+
+        registers[nibbles[1]].set(Xvalue | Yvalue);
+    }
+
+    /**
+     * VX is set to the value of VX bitwise AND VY
+     */
+    private void opcode_8XY2(int[] nibbles) {
+        int Xvalue = registers[nibbles[1]].get();
+        int Yvalue = registers[nibbles[2]].get();
+
+        registers[nibbles[1]].set(Xvalue & Yvalue);
+    }
+
+    /**
+     * VX is set to the value of VX bitwise XOR VY
+     */
+    private void opcode_8XY3(int[] nibbles) {
+        int Xvalue = registers[nibbles[1]].get();
+        int Yvalue = registers[nibbles[2]].get();
+
+        registers[nibbles[1]].set(Xvalue ^ Yvalue);
+    }
+
+    /**
+     * VX is set to the value of VX plus VY
+     */
+    private void opcode_8XY4(int[] nibbles) {
+        int Xvalue = registers[nibbles[1]].get();
+        int Yvalue = registers[nibbles[2]].get();
+
+        registers[nibbles[1]].set(Xvalue + Yvalue);
+    }
+
+    /**
+     * VX is set to the value of VX - VY
+     */
+    private void opcode_8XY5(int[] nibbles) {
+        int Xvalue = registers[nibbles[1]].get();
+        int Yvalue = registers[nibbles[2]].get();
+
+        registers[nibbles[1]].set(Xvalue - Yvalue);
+    }
+
+    /**
+     * VX is set to the value of VY right shift. VF is set to dropped bit
+     */
+    private void opcode_8XY6(int[] nibbles) {
+        int Yvalue = registers[nibbles[2]].get();
+
+        int newValue = Yvalue >> 1;
+        registers[nibbles[1]].set(newValue);
+
+        registers[VF_REGISTER].set(Yvalue & 1);
+    }
+
+    /**
+     * VX is set to the value of VY - VX
+     */
+    private void opcode_8XY7(int[] nibbles) {
+        int Xvalue = registers[nibbles[1]].get();
+        int Yvalue = registers[nibbles[2]].get();
+
+        registers[nibbles[1]].set(Xvalue - Yvalue);
+    }
+
+    /**
+     * VX is set to the value of VY left shift. VF is set to dropped bit
+     */
+    private void opcode_8XYE(int[] nibbles) {
+        int Yvalue = registers[nibbles[2]].get();
+
+        int newValue = (Yvalue << 1) % 256;
+        registers[nibbles[1]].set(newValue);
+
+        if ((Yvalue & 128) != 0) {
+            registers[VF_REGISTER].set(1);
+        } else {
+            registers[VF_REGISTER].set(0);
+        }
     }
 
     /**
@@ -358,9 +471,9 @@ public class Chip8 implements Runnable {
         }
 
         if (wasAnyPixelTurnedOff) {
-            registers[15].set(1);
+            registers[VF_REGISTER].set(1);
         } else {
-            registers[15].set(0);
+            registers[VF_REGISTER].set(0);
         }
 
         display.update();
