@@ -445,20 +445,57 @@ public class Chip8 implements Runnable {
         programCounter.decrement();
     }
 
+    /**
+     * Sets the index register to the value of VX
+     */
     private void opcode_FX29(int[] nibbles) {
-        //TODO
+        int mask = 0xF;
+
+        indexRegister.set(
+            registers[nibbles[1]].get() & mask
+        );
     }
 
+    /**
+     * Binary coded decimal conversion. Converts the value at VX to three
+     * decimal digits and puts them at the add the address pointed by the index register
+     */
     private void opcode_FX33(int[] nibbles) {
-        //TODO
+        int value = registers[nibbles[1]].get();
+
+        int firstDigit = value / 100;
+        int secondDigit = (value % 100) /10;
+        int thirdDigit = value % 10;
+
+        int address = indexRegister.get();
+
+        memory.set(address,     firstDigit);
+        memory.set(address + 1, secondDigit);
+        memory.set(address + 2, thirdDigit);
     }
 
+    /**
+     * Stores the values of V0 to VX inclusive into memory pointed by the index register
+     */
     private void opcode_FX55(int[] nibbles) {
-        //TODO
+        int address = indexRegister.get();
+
+        for (int i = 0; i <= nibbles[1]; i++) {
+            memory.set(address, registers[i].get());
+        }
     }
 
+    /**
+     * Loads the memory pointed by the index register into V0 to VX inclusive
+     */
     private void opcode_FX65(int[] nibbles) {
-        //TODO
+        int address = indexRegister.get();
+
+        for (int i = 0; i <= nibbles[1]; i++) {
+            registers[i].set(
+                memory.get(address + i)
+            );
+        }
     }
 
     private int combine(int firstNibble, int secondNibble) {
