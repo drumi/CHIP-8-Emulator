@@ -47,7 +47,7 @@ public class Chip8 implements Runnable {
     private final Map<Integer, Consumer<int[]>> opcodesFxnn;
 
     static {
-        LEGAL_KEYS = new HashSet<>(){{
+        LEGAL_KEYS = new HashSet<>() {{
             add(KeyCode.DIGIT0);
             add(KeyCode.DIGIT1);
             add(KeyCode.DIGIT2);
