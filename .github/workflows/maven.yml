@@ -32,4 +32,4 @@ jobs:
       run: mvn -B package --file pom.xml
 
     - name: Run tests with Maven
-      run: mvn -B test --file pom.xm
+      run: mvn -B test --file pom.xml
