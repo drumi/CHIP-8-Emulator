@@ -8,8 +8,8 @@ import bg.example.counter.Counter;
 import bg.example.counter.SimpleCounter;
 import bg.example.display.Display;
 import bg.example.display.WindowDisplay;
+import bg.example.font.FontLoader;
 import bg.example.keyboard.Keyboard;
-import bg.example.keyboard.KeyboardInformation;
 import bg.example.keyboard.KeyboardProxy;
 import bg.example.memory.Memory;
 import bg.example.memory.SimpleMemory;
@@ -33,9 +33,13 @@ public class Main extends Application {
 
     private static final Path PROGRAM_LOCATION = Path.of("src/main/resources/IBM Logo.ch8");
 
+    private static final int REGISTER_BITS= 8;
+    private static final int INDEX_REGISTER_BITS = 16;
     private static final int REGISTER_COUNT = 16;
+
     private static final int FIRST_INSTRUCTION_OFFSET = 0x200;
     private static final int CHIP8_MEMORY_SIZE = 4096;
+    private static final int FONT_OFFSET = 0;
 
     private static final Map<KeyCode, KeyCode> KEY_REMAPPING = new HashMap<>() {
         {
@@ -64,9 +68,12 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) {
-        ROMLoader loader = new BasicROMLoader();
+        ROMLoader ROMloader = new BasicROMLoader();
+        FontLoader fontLoader = new FontLoader();
+
         int[] bytes = new int[CHIP8_MEMORY_SIZE];
-        loader.load(PROGRAM_LOCATION, bytes, FIRST_INSTRUCTION_OFFSET);
+        fontLoader.load(bytes, FONT_OFFSET);
+        ROMloader.load(PROGRAM_LOCATION, bytes, FIRST_INSTRUCTION_OFFSET);
 
         Counter programCounter = new SimpleCounter(FIRST_INSTRUCTION_OFFSET);
         Counter delayCounter = new SimpleCounter(0);
@@ -80,11 +87,11 @@ public class Main extends Application {
         Keyboard keyboard = new KeyboardProxy(KEY_REMAPPING);
         Display display = new WindowDisplay(new boolean[DISPLAY_HEIGHT][DISPLAY_WIDTH], stage, keyboard);
 
-        Register indexRegister = new SimpleRegister();
+        Register indexRegister = new SimpleRegister(INDEX_REGISTER_BITS);
         Register[] registers = new SimpleRegister[REGISTER_COUNT];
 
         for (int i = 0; i < REGISTER_COUNT; i++) {
-            registers[i] = new SimpleRegister();
+            registers[i] = new SimpleRegister(REGISTER_BITS);
         }
 
         Chip8 chip = new Chip8(

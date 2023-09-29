@@ -82,15 +82,15 @@ public class Chip8 implements Runnable {
     }
 
     private void initOpcodes8xynMap() {
-        opcodes.put(0,  this::opcode_8XY0);
-        opcodes.put(1,  this::opcode_8XY1);
-        opcodes.put(2,  this::opcode_8XY2);
-        opcodes.put(3,  this::opcode_8XY3);
-        opcodes.put(4,  this::opcode_8XY4);
-        opcodes.put(5,  this::opcode_8XY5);
-        opcodes.put(6,  this::opcode_8XY6);
-        opcodes.put(7,  this::opcode_8XY7);
-        opcodes.put(14, this::opcode_8XYE);
+        opcodes8xyn.put(0,  this::opcode_8XY0);
+        opcodes8xyn.put(1,  this::opcode_8XY1);
+        opcodes8xyn.put(2,  this::opcode_8XY2);
+        opcodes8xyn.put(3,  this::opcode_8XY3);
+        opcodes8xyn.put(4,  this::opcode_8XY4);
+        opcodes8xyn.put(5,  this::opcode_8XY5);
+        opcodes8xyn.put(6,  this::opcode_8XY6);
+        opcodes8xyn.put(7,  this::opcode_8XY7);
+        opcodes8xyn.put(14, this::opcode_8XYE);
     }
 
     private int fetch() {
@@ -395,6 +395,69 @@ public class Chip8 implements Runnable {
      * Miscellaneous instructions
      */
     private void opcode_FXNN(int[] nibbles) {
+        //TODO
+    }
+
+    /**
+     * Sets VX to the current value of the delay timer
+     */
+    private void opcode_FX07(int[] nibbles) {
+        registers[nibbles[1]].set(
+            delayCounter.get()
+        );
+    }
+
+    /**
+     * Sets the delay timer to the value of VX
+     */
+    private void opcode_FX15(int[] nibbles) {
+        delayCounter.set(
+            registers[nibbles[1]].get()
+        );
+    }
+
+    /**
+     * Sets the sound timer to the value of VX
+     */
+    private void opcode_FX18(int[] nibbles) {
+        soundCounter.set(
+            registers[nibbles[1]].get()
+        );
+    }
+
+    /**
+     * Add the value of VX to the index register. Set VF to one if result is bigger than 0xFFF
+     */
+    private void opcode_FX1E(int[] nibbles) {
+        int newValue = indexRegister.get() + nibbles[1];
+
+        indexRegister.set(newValue);
+
+        if (newValue > 0xFFF) {
+            registers[VF_REGISTER].set(1);
+        }
+    }
+
+    /**
+     * Block till key is pressed
+     */
+    private void opcode_FX0A(int[] nibbles) {
+        programCounter.decrement();
+    }
+
+    private void opcode_FX29(int[] nibbles) {
+        //TODO
+    }
+
+    private void opcode_FX33(int[] nibbles) {
+        //TODO
+    }
+
+    private void opcode_FX55(int[] nibbles) {
+        //TODO
+    }
+
+    private void opcode_FX65(int[] nibbles) {
         //TODO
     }
 
