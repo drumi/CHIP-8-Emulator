@@ -24,17 +24,18 @@ public class Main {
 
     private static final int DISPLAY_WIDTH = 64;
     private static final int DISPLAY_HEIGHT = 32;
-    private static final short FIRST_INSTRUCTION_OFFSET = 0x200;
+    private static final int FIRST_INSTRUCTION_OFFSET = 0x200;
+    private static final int CHIP8_MEMORY_SIZE = 4096;
 
     public static void main(String[] args) {
 
         ROMLoader loader = new BasicROMLoader();
-        int[] bytes = new int[4096];
+        int[] bytes = new int[CHIP8_MEMORY_SIZE];
         loader.load(PROGRAM_LOCATION, bytes, FIRST_INSTRUCTION_OFFSET);
 
         Counter programCounter = new SimpleCounter(FIRST_INSTRUCTION_OFFSET);
         Counter delayCounter = new SimpleCounter(0);
-        Counter soundCounter = new SimpleCounter(1);
+        Counter soundCounter = new SimpleCounter(0);
 
         Deque<Integer> programStack = new ArrayDeque<>();
 

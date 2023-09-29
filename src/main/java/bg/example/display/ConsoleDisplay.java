@@ -1,7 +1,9 @@
 package bg.example.display;
 
-import java.io.IOException;
 
+/**
+ * Test class provided for debugging
+ */
 public class ConsoleDisplay extends BaseDisplay {
 
     private static final char ON_PIXEL = '█';
