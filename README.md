@@ -1,2 +1,2 @@
 # CHIP-8-Emulator
-A partial CHIP-8 Emulator implemented in java
+CHIP-8 Emulator implemented in java
