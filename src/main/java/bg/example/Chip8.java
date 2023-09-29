@@ -477,16 +477,22 @@ public class Chip8 implements Runnable {
     }
 
     /**
-     * Block till key is pressed
+     * Block till key is pressed and released
      */
     private void opcode_FX0A(int[] nibbles) {
         KeyCode lastPressed = keyboardInformation.getLastPressedKey();
+        KeyCode newestPressed = lastPressed;
 
-        if (keyboardInformation.isPressed(lastPressed)) {
-            registers[nibbles[1]].set(fromKeyCodeToInteger(lastPressed));
-        } else {
-            repeatInstruction();
+        while (lastPressed == newestPressed) {
+            newestPressed = keyboardInformation.getLastPressedKey();
+            Thread.yield();
         }
+
+        while (keyboardInformation.isPressed(newestPressed)) {
+            Thread.yield();
+        }
+
+        registers[nibbles[1]].set(fromKeyCodeToInteger(newestPressed));
     }
 
     /**
