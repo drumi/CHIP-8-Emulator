@@ -6,7 +6,7 @@ package bg.example.display;
  */
 public class ConsoleDisplay extends BaseDisplay {
 
-    private static final char ON_PIXEL = '█';
+    private static final char ON_PIXEL = 'X';
     private static final char OFF_PIXEL = ' ';
 
     public ConsoleDisplay(boolean[][] pixels) {
