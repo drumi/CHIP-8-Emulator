@@ -3,8 +3,10 @@ package bg.example;
 import bg.example.clock.Clock;
 import bg.example.counter.Counter;
 import bg.example.display.Display;
+import bg.example.keyboard.KeyboardInformation;
 import bg.example.memory.Memory;
 import bg.example.register.Register;
+import javafx.scene.input.KeyCode;
 
 import java.util.Deque;
 import java.util.HashMap;
@@ -29,6 +31,8 @@ public class Chip8 implements Runnable {
     private final Clock clock;
     private final Memory memory;
     private final Display display;
+    private final KeyboardInformation keyboardInformation;
+
     private final Register[] registers;
     private final Register indexRegister;
 
@@ -36,7 +40,7 @@ public class Chip8 implements Runnable {
 
     public Chip8(Counter programCounter, Counter delayCounter, Counter soundCounter,
                  Deque<Integer> programStack, Clock clock, Memory memory, Display display,
-                 Register[] registers, Register indexRegister) {
+                 KeyboardInformation keyboardInformation, Register[] registers, Register indexRegister) {
         this.programCounter = programCounter;
         this.delayCounter = delayCounter;
         this.soundCounter = soundCounter;
@@ -44,6 +48,7 @@ public class Chip8 implements Runnable {
         this.clock = clock;
         this.memory = memory;
         this.display = display;
+        this.keyboardInformation = keyboardInformation;
         this.registers = registers;
         this.indexRegister = indexRegister;
 
@@ -260,7 +265,17 @@ public class Chip8 implements Runnable {
      * Instructions related to key presses
      */
     private void opcode_EXNN(int[] nibbles) {
-        //TODO
+        KeyCode key = toKeyCode(nibbles[1]);
+
+        if (nibbles[3] == 0xE) {
+            if (keyboardInformation.isPressed(key)) {
+                programCounter.increment();
+            }
+        } else if (nibbles[3] == 0x1) {
+            if (!keyboardInformation.isPressed(key)) {
+                programCounter.increment();
+            }
+        }
     }
 
     /**
@@ -361,6 +376,28 @@ public class Chip8 implements Runnable {
         if (v1 != v2) {
             programCounter.increment();
         }
+    }
+
+    private KeyCode toKeyCode(int value) {
+        return switch (value) {
+            case 0 -> KeyCode.NUMPAD0;
+            case 1 -> KeyCode.NUMPAD1;
+            case 2 -> KeyCode.NUMPAD2;
+            case 3 -> KeyCode.NUMPAD3;
+            case 4 -> KeyCode.NUMPAD4;
+            case 5 -> KeyCode.NUMPAD5;
+            case 6 -> KeyCode.NUMPAD6;
+            case 7 -> KeyCode.NUMPAD7;
+            case 8 -> KeyCode.NUMPAD8;
+            case 9 -> KeyCode.NUMPAD9;
+            case 10 -> KeyCode.A;
+            case 11 -> KeyCode.B;
+            case 12 -> KeyCode.C;
+            case 13 -> KeyCode.D;
+            case 14 -> KeyCode.E;
+            case 15 -> KeyCode.F;
+            default -> throw new IllegalStateException("Unexpected value: " + value);
+        };
     }
 
     public void runOneCycle() {

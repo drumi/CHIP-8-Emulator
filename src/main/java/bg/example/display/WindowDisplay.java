@@ -1,6 +1,6 @@
 package bg.example.display;
 
-import javafx.application.Application;
+import bg.example.keyboard.Keyboard;
 import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -19,10 +19,12 @@ public class WindowDisplay extends BaseDisplay {
     private static final String DISPLAY_TITLE = "Chip-8 Emulator";
 
     private final Stage stage;
+    private final Keyboard keyboard;
 
-    public WindowDisplay(boolean[][] pixels, Stage stage) {
+    public WindowDisplay(boolean[][] pixels, Stage stage, Keyboard keyboard) {
         super(pixels);
         this.stage = stage;
+        this.keyboard = keyboard;
 
         stage.setHeight(WINDOW_HEIGHT);
         stage.setWidth(WINDOW_WIDTH);
@@ -35,6 +37,14 @@ public class WindowDisplay extends BaseDisplay {
 
         Group group = new Group();
         Scene scene = new Scene(group);
+
+        scene.setOnKeyPressed(ke ->
+            keyboard.press(ke.getCode())
+        );
+
+        scene.setOnKeyReleased(ke ->
+            keyboard.release(ke.getCode())
+        );
 
         for (int y = 0; y < pixels.length; y++) {
             for (int x = 0; x < pixels[0].length; x++) {
