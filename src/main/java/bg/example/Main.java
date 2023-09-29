@@ -22,8 +22,6 @@ import java.util.Deque;
 
 public class Main extends Application {
 
-
-
     private static final Path PROGRAM_LOCATION = Path.of("src/main/resources/IBM Logo.ch8");
     private static final int REGISTER_COUNT = 16;
 
@@ -37,7 +35,7 @@ public class Main extends Application {
     }
 
     @Override
-    public void start(Stage stage) throws Exception {
+    public void start(Stage stage) {
         ROMLoader loader = new BasicROMLoader();
         int[] bytes = new int[CHIP8_MEMORY_SIZE];
         loader.load(PROGRAM_LOCATION, bytes, FIRST_INSTRUCTION_OFFSET);
@@ -72,13 +70,7 @@ public class Main extends Application {
             indexRegister
         );
 
-        var thread = new Thread() {
-            @Override
-            public void run() {
-                super.run();
-                chip.run();
-            }
-        };
+        var thread = new Thread(chip);
 
         thread.setDaemon(true);
         thread.start();

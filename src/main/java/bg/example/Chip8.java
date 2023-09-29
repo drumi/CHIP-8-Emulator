@@ -191,7 +191,7 @@ public class Chip8 implements Runnable {
      * Logical and arithmetic instructions, depending on the last nibble
      */
     private void opcode_8XYN(int[] nibbles) {
-
+        //TODO
     }
 
     /**
@@ -260,14 +260,14 @@ public class Chip8 implements Runnable {
      * Instructions related to key presses
      */
     private void opcode_EXNN(int[] nibbles) {
-
+        //TODO
     }
 
     /**
      * Miscellaneous instructions
      */
     private void opcode_FXNN(int[] nibbles) {
-
+        //TODO
     }
 
     private int combine(int firstNibble, int secondNibble) {
