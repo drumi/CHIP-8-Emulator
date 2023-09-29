@@ -8,10 +8,11 @@ import bg.example.memory.Memory;
 import bg.example.register.Register;
 import javafx.scene.input.KeyCode;
 
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
@@ -24,6 +25,8 @@ public class Chip8 implements Runnable {
     private static final byte DISPLAY_HEIGHT = 32;
 
     private static final int VF_REGISTER = 15;
+
+    private static final Set<KeyCode> LEGAL_KEYS;
 
     private final Counter programCounter;
     private final Counter delayCounter;
@@ -42,6 +45,27 @@ public class Chip8 implements Runnable {
     private final Map<Integer, Consumer<int[]>> opcodes;
     private final Map<Integer, Consumer<int[]>> opcodes8xyn;
     private final Map<Integer, Consumer<int[]>> opcodesFxnn;
+
+    static {
+        LEGAL_KEYS = new HashSet<>(){{
+            add(KeyCode.DIGIT0);
+            add(KeyCode.DIGIT1);
+            add(KeyCode.DIGIT2);
+            add(KeyCode.DIGIT3);
+            add(KeyCode.DIGIT4);
+            add(KeyCode.DIGIT5);
+            add(KeyCode.DIGIT6);
+            add(KeyCode.DIGIT7);
+            add(KeyCode.DIGIT8);
+            add(KeyCode.DIGIT9);
+            add(KeyCode.A);
+            add(KeyCode.B);
+            add(KeyCode.C);
+            add(KeyCode.D);
+            add(KeyCode.E);
+            add(KeyCode.F);
+        }};
+    }
 
     public Chip8(Counter programCounter, Counter delayCounter, Counter soundCounter,
                  Deque<Integer> programStack, Clock clock, Memory memory, Display display,
@@ -485,6 +509,11 @@ public class Chip8 implements Runnable {
 
         while (lastPressed == newestPressed) {
             newestPressed = keyboardInformation.getLastPressedKey();
+
+            if (!LEGAL_KEYS.contains(newestPressed)) {
+                newestPressed = lastPressed;
+            }
+            
             Thread.yield();
         }
 
