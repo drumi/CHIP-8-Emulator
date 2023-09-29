@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
-public class Chip8 implements Runnable{
+public class Chip8 implements Runnable {
 
     private static final byte BYTE_SIZE = 8;
     private static final byte NIBBLE_SHIFT_OFFSET = 4;
@@ -318,23 +318,24 @@ public class Chip8 implements Runnable{
         int Xcoord = registers[indexX].get() % DISPLAY_WIDTH;
         int Ycoord = registers[indexY].get() % DISPLAY_HEIGHT;
 
-        int spriteAddress = indexRegister.get() & 0xFFFF;
+        int spriteAddress = indexRegister.get();
         boolean wasAnyPixelTurnedOff = false;
 
         for (int y = Ycoord; y < Ycoord + pixelCountHigh; y++) {
-            if (y == DISPLAY_HEIGHT){
+            if (y == DISPLAY_HEIGHT) {
                 break;
             }
 
-            int pixelSprite = memory.get(spriteAddress + y - Ycoord);
+            int currentPixelRow = memory.get(spriteAddress + y - Ycoord);
 
-            for (int x = Xcoord; x < Xcoord + BYTE_SIZE; x++) {
+            for (int x = Xcoord; x <= Xcoord + BYTE_SIZE; x++) {
                 if (x == DISPLAY_WIDTH) {
                     break;
                 }
 
                 int bitOffset = x - Xcoord;
-                if (((pixelSprite & 1 << BYTE_SIZE - bitOffset) >>>  BYTE_SIZE - bitOffset) == 1) {
+                int currentBit = (currentPixelRow & (1 << BYTE_SIZE - bitOffset)) >>>  BYTE_SIZE - bitOffset;
+                if (currentBit == 1) {
                     wasAnyPixelTurnedOff |= display.flipPixel(x, y);
                 }
             }
@@ -362,13 +363,17 @@ public class Chip8 implements Runnable{
         }
     }
 
+    public void runOneCycle() {
+        clock.tick();
+        int instruction = fetch();
+        int[] nibbles = splitIntoNibbles(instruction);
+        execute(nibbles);
+    }
+
     @Override
     public void run() {
         while (true) {
-            clock.tick();
-            int instruction = fetch();
-            int[] nibbles = splitIntoNibbles(instruction);
-            execute(nibbles);
+            runOneCycle();
         }
     }
 
