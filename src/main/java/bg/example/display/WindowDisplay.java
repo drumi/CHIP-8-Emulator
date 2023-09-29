@@ -10,11 +10,11 @@ import javafx.stage.Stage;
 
 public class WindowDisplay extends BaseDisplay {
 
-    private static final int WINDOW_HEIGHT = 320;
-    private static final int WINDOW_WIDTH = 640;
-
     private static final int PIXEL_HEIGHT = 10;
     private static final int PIXEL_WIDTH = 10;
+
+    private static final int WINDOW_HEIGHT = 320 + 4 * PIXEL_HEIGHT;
+    private static final int WINDOW_WIDTH = 640 + 4 * PIXEL_WIDTH;
 
     private static final String DISPLAY_TITLE = "Chip-8 Emulator";
 

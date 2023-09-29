@@ -8,6 +8,7 @@ import bg.example.memory.Memory;
 import bg.example.register.Register;
 import javafx.scene.input.KeyCode;
 
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +41,7 @@ public class Chip8 implements Runnable {
 
     private final Map<Integer, Consumer<int[]>> opcodes;
     private final Map<Integer, Consumer<int[]>> opcodes8xyn;
+    private final Map<Integer, Consumer<int[]>> opcodesFxnn;
 
     public Chip8(Counter programCounter, Counter delayCounter, Counter soundCounter,
                  Deque<Integer> programStack, Clock clock, Memory memory, Display display,
@@ -57,40 +59,63 @@ public class Chip8 implements Runnable {
 
         opcodes = new HashMap<>();
         opcodes8xyn = new HashMap<>();
+        opcodesFxnn = new HashMap<>();
 
         initOpcodesMap();
         initOpcodes8xynMap();
+        initOpcodesFxnnMap();
     }
 
     private void initOpcodesMap() {
-        opcodes.put(0,  this::opcode_0UUU);
-        opcodes.put(1,  this::opcode_1NNN);
-        opcodes.put(2,  this::opcode_2NNN);
-        opcodes.put(3,  this::opcode_3XNN);
-        opcodes.put(4,  this::opcode_4XNN);
-        opcodes.put(5,  this::opcode_5XY0);
-        opcodes.put(6,  this::opcode_6XNN);
-        opcodes.put(7,  this::opcode_7XNN);
-        opcodes.put(8,  this::opcode_8XYN);
-        opcodes.put(9,  this::opcode_9XY0);
-        opcodes.put(10, this::opcode_ANNN);
-        opcodes.put(11, this::opcode_BNNN);
-        opcodes.put(12, this::opcode_CXNN);
-        opcodes.put(13, this::opcode_DXYN);
-        opcodes.put(14, this::opcode_EXNN);
-        opcodes.put(15, this::opcode_FXNN);
+        opcodes.put(0x0, this::opcode_0UUU);
+        opcodes.put(0x1, this::opcode_1NNN);
+        opcodes.put(0x2, this::opcode_2NNN);
+        opcodes.put(0x3, this::opcode_3XNN);
+        opcodes.put(0x4, this::opcode_4XNN);
+        opcodes.put(0x5, this::opcode_5XY0);
+        opcodes.put(0x6, this::opcode_6XNN);
+        opcodes.put(0x7, this::opcode_7XNN);
+        opcodes.put(0x8, this::opcode_8XYN);
+        opcodes.put(0x9, this::opcode_9XY0);
+        opcodes.put(0xA, this::opcode_ANNN);
+        opcodes.put(0xB, this::opcode_BNNN);
+        opcodes.put(0xC, this::opcode_CXNN);
+        opcodes.put(0xD, this::opcode_DXYN);
+        opcodes.put(0xE, this::opcode_EXNN);
+        opcodes.put(0xF, this::opcode_FXNN);
     }
 
     private void initOpcodes8xynMap() {
-        opcodes8xyn.put(0,  this::opcode_8XY0);
-        opcodes8xyn.put(1,  this::opcode_8XY1);
-        opcodes8xyn.put(2,  this::opcode_8XY2);
-        opcodes8xyn.put(3,  this::opcode_8XY3);
-        opcodes8xyn.put(4,  this::opcode_8XY4);
-        opcodes8xyn.put(5,  this::opcode_8XY5);
-        opcodes8xyn.put(6,  this::opcode_8XY6);
-        opcodes8xyn.put(7,  this::opcode_8XY7);
-        opcodes8xyn.put(14, this::opcode_8XYE);
+        opcodes8xyn.put(0x0, this::opcode_8XY0);
+        opcodes8xyn.put(0x1, this::opcode_8XY1);
+        opcodes8xyn.put(0x2, this::opcode_8XY2);
+        opcodes8xyn.put(0x3, this::opcode_8XY3);
+        opcodes8xyn.put(0x4, this::opcode_8XY4);
+        opcodes8xyn.put(0x5, this::opcode_8XY5);
+        opcodes8xyn.put(0x6, this::opcode_8XY6);
+        opcodes8xyn.put(0x7, this::opcode_8XY7);
+        opcodes8xyn.put(0xE, this::opcode_8XYE);
+    }
+
+    private void initOpcodesFxnnMap() {
+        opcodesFxnn.put(0x3, this::opcode_FX33);
+        opcodesFxnn.put(0x7, this::opcode_FX07);
+        opcodesFxnn.put(0x8, this::opcode_FX18);
+        opcodesFxnn.put(0x9, this::opcode_FX29);
+        opcodesFxnn.put(0xA, this::opcode_FX0A);
+        opcodesFxnn.put(0xE, this::opcode_FX1E);
+
+        opcodesFxnn.put(0x5,
+            nibbles -> {
+                if (nibbles[2] == 0x1) {
+                    opcode_FX15(nibbles);
+                } else if (nibbles[2] == 0x5) {
+                    opcode_FX55(nibbles);
+                } else {
+                    opcode_FX65(nibbles);
+                }
+            }
+        );
     }
 
     private int fetch() {
@@ -158,7 +183,6 @@ public class Chip8 implements Runnable {
         );
     }
 
-
     /**
      * Skips one instruction if the value at register X is equal to NN
      */
@@ -193,8 +217,7 @@ public class Chip8 implements Runnable {
      * Sets the value at register X to NN
      */
     private void opcode_6XNN(int[] nibbles) {
-        setRegister(
-            nibbles[1],
+        registers[nibbles[1]].set(
             combine(nibbles[2], nibbles[3])
         );
     }
@@ -203,9 +226,10 @@ public class Chip8 implements Runnable {
      * Adds NN to the value at register X. Overflowing does not set the flag at register VF
      */
     private void opcode_7XNN(int[] nibbles) {
-        addToRegister(
-            nibbles[1],
-            combine(nibbles[2], nibbles[3])
+        int oldValue = registers[nibbles[1]].get();
+
+        registers[nibbles[1]].set(
+            oldValue + combine(nibbles[2], nibbles[3])
         );
     }
 
@@ -261,7 +285,11 @@ public class Chip8 implements Runnable {
         int Xvalue = registers[nibbles[1]].get();
         int Yvalue = registers[nibbles[2]].get();
 
-        registers[nibbles[1]].set(Xvalue + Yvalue);
+        boolean overflow = registers[nibbles[1]].set(Xvalue + Yvalue);
+
+        registers[VF_REGISTER].set(
+            overflow ? 1 : 0
+        );
     }
 
     /**
@@ -271,7 +299,11 @@ public class Chip8 implements Runnable {
         int Xvalue = registers[nibbles[1]].get();
         int Yvalue = registers[nibbles[2]].get();
 
-        registers[nibbles[1]].set(Xvalue - Yvalue);
+        boolean underflow = registers[nibbles[1]].set(Xvalue - Yvalue);
+
+        registers[VF_REGISTER].set(
+            underflow ? 0 : 1
+        );
     }
 
     /**
@@ -293,7 +325,11 @@ public class Chip8 implements Runnable {
         int Xvalue = registers[nibbles[1]].get();
         int Yvalue = registers[nibbles[2]].get();
 
-        registers[nibbles[1]].set(Xvalue - Yvalue);
+        boolean underflow = registers[nibbles[1]].set(Yvalue - Xvalue);
+
+        registers[VF_REGISTER].set(
+            underflow ? 0 : 1
+        );
     }
 
     /**
@@ -326,7 +362,7 @@ public class Chip8 implements Runnable {
      * Sets the value at the index register to NNN
      */
     private void opcode_ANNN(int[] nibbles) {
-        setIndexRegister(
+        indexRegister.set(
             combine(
                 nibbles[1],
                 nibbles[2],
@@ -378,15 +414,17 @@ public class Chip8 implements Runnable {
      * Instructions related to key presses
      */
     private void opcode_EXNN(int[] nibbles) {
-        KeyCode key = toKeyCode(nibbles[1]);
+        KeyCode key = fromIntegerToKeyCode(
+            registers[nibbles[1]].get()
+        );
 
         if (nibbles[3] == 0xE) {
             if (keyboardInformation.isPressed(key)) {
-                programCounter.increment();
+                skipInstruction();
             }
         } else if (nibbles[3] == 0x1) {
             if (!keyboardInformation.isPressed(key)) {
-                programCounter.increment();
+                skipInstruction();
             }
         }
     }
@@ -395,7 +433,7 @@ public class Chip8 implements Runnable {
      * Miscellaneous instructions
      */
     private void opcode_FXNN(int[] nibbles) {
-        //TODO
+        opcodesFxnn.get(nibbles[3]).accept(nibbles);
     }
 
     /**
@@ -429,7 +467,7 @@ public class Chip8 implements Runnable {
      * Add the value of VX to the index register. Set VF to one if result is bigger than 0xFFF
      */
     private void opcode_FX1E(int[] nibbles) {
-        int newValue = indexRegister.get() + nibbles[1];
+        int newValue = indexRegister.get() + registers[nibbles[1]].get();
 
         indexRegister.set(newValue);
 
@@ -442,7 +480,13 @@ public class Chip8 implements Runnable {
      * Block till key is pressed
      */
     private void opcode_FX0A(int[] nibbles) {
-        programCounter.decrement();
+        KeyCode lastPressed = keyboardInformation.getLastPressedKey();
+
+        if (keyboardInformation.isPressed(lastPressed)) {
+            registers[nibbles[1]].set(fromKeyCodeToInteger(lastPressed));
+        } else {
+            repeatInstruction();
+        }
     }
 
     /**
@@ -481,7 +525,7 @@ public class Chip8 implements Runnable {
         int address = indexRegister.get();
 
         for (int i = 0; i <= nibbles[1]; i++) {
-            memory.set(address, registers[i].get());
+            memory.set(address + i, registers[i].get());
         }
     }
 
@@ -525,23 +569,6 @@ public class Chip8 implements Runnable {
         programCounter.set(returnAddress);
     }
 
-    private void setRegister(int index, int value) {
-        registers[index].set(value);
-    }
-
-    private void addToRegister(int index, int value) {
-        Register register = registers[index];
-
-        int oldValue = register.get();
-        int newValue = value + oldValue;
-
-        register.set(newValue);
-    }
-
-    private void setIndexRegister(int value) {
-        indexRegister.set(value);
-    }
-
     private void drawSprite(int indexX, int indexY, int pixelCountHigh) {
         int Xcoord = registers[indexX].get() % DISPLAY_WIDTH;
         int Ycoord = registers[indexY].get() % DISPLAY_HEIGHT;
@@ -577,32 +604,42 @@ public class Chip8 implements Runnable {
         }
 
         display.update();
-    };
+    }
 
     private void skipIfEqual(int v1, int v2) {
         if (v1 == v2) {
-            programCounter.increment();
+            skipInstruction();
         }
     }
 
     private void skipIfNotEqual(int v1, int v2) {
         if (v1 != v2) {
-            programCounter.increment();
+            skipInstruction();
         }
     }
 
-    private KeyCode toKeyCode(int value) {
+    private void skipInstruction() {
+        programCounter.increment();
+        programCounter.increment();
+    }
+
+    private void repeatInstruction() {
+        programCounter.decrement();
+        programCounter.decrement();
+    }
+
+    private KeyCode fromIntegerToKeyCode(int value) {
         return switch (value) {
-            case 0 -> KeyCode.NUMPAD0;
-            case 1 -> KeyCode.NUMPAD1;
-            case 2 -> KeyCode.NUMPAD2;
-            case 3 -> KeyCode.NUMPAD3;
-            case 4 -> KeyCode.NUMPAD4;
-            case 5 -> KeyCode.NUMPAD5;
-            case 6 -> KeyCode.NUMPAD6;
-            case 7 -> KeyCode.NUMPAD7;
-            case 8 -> KeyCode.NUMPAD8;
-            case 9 -> KeyCode.NUMPAD9;
+            case 0 -> KeyCode.DIGIT0;
+            case 1 -> KeyCode.DIGIT1;
+            case 2 -> KeyCode.DIGIT2;
+            case 3 -> KeyCode.DIGIT3;
+            case 4 -> KeyCode.DIGIT4;
+            case 5 -> KeyCode.DIGIT5;
+            case 6 -> KeyCode.DIGIT6;
+            case 7 -> KeyCode.DIGIT7;
+            case 8 -> KeyCode.DIGIT8;
+            case 9 -> KeyCode.DIGIT9;
             case 10 -> KeyCode.A;
             case 11 -> KeyCode.B;
             case 12 -> KeyCode.C;
@@ -610,6 +647,28 @@ public class Chip8 implements Runnable {
             case 14 -> KeyCode.E;
             case 15 -> KeyCode.F;
             default -> throw new IllegalStateException("Unexpected value: " + value);
+        };
+    }
+
+    private int fromKeyCodeToInteger(KeyCode key) {
+        return switch (key) {
+            case DIGIT0 -> 0;
+            case DIGIT1 -> 1;
+            case DIGIT2 -> 2;
+            case DIGIT3 -> 3;
+            case DIGIT4 -> 4;
+            case DIGIT5 -> 5;
+            case DIGIT6 -> 6;
+            case DIGIT7 -> 7;
+            case DIGIT8 -> 8;
+            case DIGIT9 -> 9;
+            case A -> 10;
+            case B -> 11;
+            case C -> 12;
+            case D -> 13;
+            case E -> 14;
+            case F -> 15;
+            default -> throw new IllegalStateException("Unexpected key: " + key);
         };
     }
 

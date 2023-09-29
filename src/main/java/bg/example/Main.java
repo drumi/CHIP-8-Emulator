@@ -5,6 +5,7 @@ import bg.example.ROM.ROMLoader;
 import bg.example.clock.Clock;
 import bg.example.clock.SimpleClock;
 import bg.example.counter.Counter;
+import bg.example.counter.ReducingCounter;
 import bg.example.counter.SimpleCounter;
 import bg.example.display.Display;
 import bg.example.display.WindowDisplay;
@@ -28,14 +29,16 @@ import java.util.Map;
 
 public class Main extends Application {
 
+    private static final Path PROGRAM_LOCATION = Path.of("src/main/resources/Breakout [Carmelo Cortez, 1979].ch8");
+
     private static final int DISPLAY_WIDTH = 64;
     private static final int DISPLAY_HEIGHT = 32;
-
-    private static final Path PROGRAM_LOCATION = Path.of("src/main/resources/IBM Logo.ch8");
 
     private static final int REGISTER_BITS= 8;
     private static final int INDEX_REGISTER_BITS = 16;
     private static final int REGISTER_COUNT = 16;
+
+    private static final int TIMER_FREQUENCY = 60;
 
     private static final int FIRST_INSTRUCTION_OFFSET = 0x200;
     private static final int CHIP8_MEMORY_SIZE = 4096;
@@ -43,20 +46,20 @@ public class Main extends Application {
 
     private static final Map<KeyCode, KeyCode> KEY_REMAPPING = new HashMap<>() {
         {
-            put(KeyCode.NUMPAD1, KeyCode.NUMPAD1);
-            put(KeyCode.NUMPAD2, KeyCode.NUMPAD2);
-            put(KeyCode.NUMPAD3, KeyCode.NUMPAD3);
-            put(KeyCode.NUMPAD4, KeyCode.C);
-            put(KeyCode.Q, KeyCode.NUMPAD4);
-            put(KeyCode.W, KeyCode.NUMPAD5);
-            put(KeyCode.E, KeyCode.NUMPAD6);
+            put(KeyCode.DIGIT1, KeyCode.DIGIT1);
+            put(KeyCode.DIGIT2, KeyCode.DIGIT2);
+            put(KeyCode.DIGIT3, KeyCode.DIGIT3);
+            put(KeyCode.DIGIT4, KeyCode.C);
+            put(KeyCode.Q, KeyCode.DIGIT4);
+            put(KeyCode.W, KeyCode.DIGIT5);
+            put(KeyCode.E, KeyCode.DIGIT6);
             put(KeyCode.R, KeyCode.D);
-            put(KeyCode.A, KeyCode.NUMPAD7);
-            put(KeyCode.S, KeyCode.NUMPAD8);
-            put(KeyCode.D, KeyCode.NUMPAD9);
+            put(KeyCode.A, KeyCode.DIGIT7);
+            put(KeyCode.S, KeyCode.DIGIT8);
+            put(KeyCode.D, KeyCode.DIGIT9);
             put(KeyCode.F, KeyCode.E);
             put(KeyCode.Z, KeyCode.A);
-            put(KeyCode.X, KeyCode.NUMPAD0);
+            put(KeyCode.X, KeyCode.DIGIT0);
             put(KeyCode.C, KeyCode.B);
             put(KeyCode.V, KeyCode.F);
         }
@@ -76,8 +79,8 @@ public class Main extends Application {
         ROMloader.load(PROGRAM_LOCATION, bytes, FIRST_INSTRUCTION_OFFSET);
 
         Counter programCounter = new SimpleCounter(FIRST_INSTRUCTION_OFFSET);
-        Counter delayCounter = new SimpleCounter(0);
-        Counter soundCounter = new SimpleCounter(0);
+        Counter delayCounter = new ReducingCounter(0, TIMER_FREQUENCY);
+        Counter soundCounter = new ReducingCounter(0, TIMER_FREQUENCY);
 
         Deque<Integer> programStack = new ArrayDeque<>();
 

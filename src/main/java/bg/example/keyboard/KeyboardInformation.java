@@ -6,4 +6,5 @@ public interface KeyboardInformation {
 
     boolean isPressed(KeyCode key);
 
+    KeyCode getLastPressedKey();
 }

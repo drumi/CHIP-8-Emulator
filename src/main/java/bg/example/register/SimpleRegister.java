@@ -2,7 +2,7 @@ package bg.example.register;
 
 public class SimpleRegister implements Register {
 
-    private final int MAX_VALUE;
+    private final int TOP_BOUNDARY;
     private int value;
 
     private static int exp2(int bits) {
@@ -16,7 +16,7 @@ public class SimpleRegister implements Register {
     }
 
     public SimpleRegister(int bits) {
-        this.MAX_VALUE = exp2(bits);
+        this.TOP_BOUNDARY = exp2(bits);
         this.value = 0;
     }
 
@@ -26,7 +26,15 @@ public class SimpleRegister implements Register {
     }
 
     @Override
-    public void set(int value) {
-        this.value = value % MAX_VALUE;
+    public boolean set(int val) {
+        boolean flag = val >= TOP_BOUNDARY || val < 0;
+
+        this.value = val % TOP_BOUNDARY;
+
+        if (this.value < 0) {
+            this.value += TOP_BOUNDARY;
+        }
+
+        return flag;
     }
 }
