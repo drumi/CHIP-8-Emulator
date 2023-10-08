@@ -24,18 +24,40 @@ public class Chip8 implements Runnable {
     private static final byte DISPLAY_WIDTH = 64;
     private static final byte DISPLAY_HEIGHT = 32;
 
-    private static final int VF_REGISTER = 15;
+    private static final int VF_REGISTER_INDEX = 15;
 
     private static final Set<KeyCode> LEGAL_KEYS;
+
+    static {
+        LEGAL_KEYS = new HashSet<>() {
+            {
+                add(KeyCode.DIGIT0);
+                add(KeyCode.DIGIT1);
+                add(KeyCode.DIGIT2);
+                add(KeyCode.DIGIT3);
+                add(KeyCode.DIGIT4);
+                add(KeyCode.DIGIT5);
+                add(KeyCode.DIGIT6);
+                add(KeyCode.DIGIT7);
+                add(KeyCode.DIGIT8);
+                add(KeyCode.DIGIT9);
+                add(KeyCode.A);
+                add(KeyCode.B);
+                add(KeyCode.C);
+                add(KeyCode.D);
+                add(KeyCode.E);
+                add(KeyCode.F);
+            }};
+    }
 
     private final Counter programCounter;
     private final Counter delayCounter;
     private final Counter soundCounter;
 
     private final Deque<Integer> programStack;
-
     private final Clock clock;
     private final Memory memory;
+
     private final Display display;
     private final KeyboardInformation keyboardInformation;
 
@@ -45,27 +67,6 @@ public class Chip8 implements Runnable {
     private final Map<Integer, Consumer<int[]>> opcodes;
     private final Map<Integer, Consumer<int[]>> opcodes8xyn;
     private final Map<Integer, Consumer<int[]>> opcodesFxnn;
-
-    static {
-        LEGAL_KEYS = new HashSet<>() {{
-            add(KeyCode.DIGIT0);
-            add(KeyCode.DIGIT1);
-            add(KeyCode.DIGIT2);
-            add(KeyCode.DIGIT3);
-            add(KeyCode.DIGIT4);
-            add(KeyCode.DIGIT5);
-            add(KeyCode.DIGIT6);
-            add(KeyCode.DIGIT7);
-            add(KeyCode.DIGIT8);
-            add(KeyCode.DIGIT9);
-            add(KeyCode.A);
-            add(KeyCode.B);
-            add(KeyCode.C);
-            add(KeyCode.D);
-            add(KeyCode.E);
-            add(KeyCode.F);
-        }};
-    }
 
     public Chip8(Counter programCounter, Counter delayCounter, Counter soundCounter,
                  Deque<Integer> programStack, Clock clock, Memory memory, Display display,
@@ -145,10 +146,10 @@ public class Chip8 implements Runnable {
     private int fetch() {
         int fetchedInstruction = 0;
 
-        fetchedInstruction |=  memory.get( programCounter.get() ) << BYTE_SIZE;
+        fetchedInstruction |= memory.get(programCounter.get()) << BYTE_SIZE;
         programCounter.increment();
 
-        fetchedInstruction |= memory.get( programCounter.get() );
+        fetchedInstruction |= memory.get(programCounter.get());
         programCounter.increment();
 
         return fetchedInstruction;
@@ -171,7 +172,7 @@ public class Chip8 implements Runnable {
     }
 
     /**
-     *  Either display clear instruction or subroutine end instruction, depending on last nibble
+     * Either display clear instruction or subroutine end instruction, depending on last nibble
      */
     private void opcode_0UUU(int[] nibbles) {
         if (nibbles[3] == 0x0) {
@@ -182,7 +183,7 @@ public class Chip8 implements Runnable {
     }
 
     /**
-     *  Jump instruction. Sets program counter to address NNN
+     * Jump instruction. Sets program counter to address NNN
      */
     private void opcode_1NNN(int[] nibbles) {
         jump(
@@ -268,8 +269,8 @@ public class Chip8 implements Runnable {
      * VX is set to the value of VY
      */
     private void opcode_8XY0(int[] nibbles) {
-      int Yvalue = registers[nibbles[2]].get();
-      registers[nibbles[1]].set(Yvalue);
+        int Yvalue = registers[nibbles[2]].get();
+        registers[nibbles[1]].set(Yvalue);
     }
 
     /**
@@ -311,7 +312,7 @@ public class Chip8 implements Runnable {
 
         boolean overflow = registers[nibbles[1]].set(Xvalue + Yvalue);
 
-        registers[VF_REGISTER].set(
+        registers[VF_REGISTER_INDEX].set(
             overflow ? 1 : 0
         );
     }
@@ -325,7 +326,7 @@ public class Chip8 implements Runnable {
 
         boolean underflow = registers[nibbles[1]].set(Xvalue - Yvalue);
 
-        registers[VF_REGISTER].set(
+        registers[VF_REGISTER_INDEX].set(
             underflow ? 0 : 1
         );
     }
@@ -339,7 +340,7 @@ public class Chip8 implements Runnable {
         int newValue = Yvalue >> 1;
         registers[nibbles[1]].set(newValue);
 
-        registers[VF_REGISTER].set(Yvalue & 1);
+        registers[VF_REGISTER_INDEX].set(Yvalue & 1);
     }
 
     /**
@@ -351,7 +352,7 @@ public class Chip8 implements Runnable {
 
         boolean underflow = registers[nibbles[1]].set(Yvalue - Xvalue);
 
-        registers[VF_REGISTER].set(
+        registers[VF_REGISTER_INDEX].set(
             underflow ? 0 : 1
         );
     }
@@ -366,9 +367,9 @@ public class Chip8 implements Runnable {
         registers[nibbles[1]].set(newValue);
 
         if ((Yvalue & 128) != 0) {
-            registers[VF_REGISTER].set(1);
+            registers[VF_REGISTER_INDEX].set(1);
         } else {
-            registers[VF_REGISTER].set(0);
+            registers[VF_REGISTER_INDEX].set(0);
         }
     }
 
@@ -496,7 +497,7 @@ public class Chip8 implements Runnable {
         indexRegister.set(newValue);
 
         if (newValue > 0xFFF) {
-            registers[VF_REGISTER].set(1);
+            registers[VF_REGISTER_INDEX].set(1);
         }
     }
 
@@ -513,7 +514,7 @@ public class Chip8 implements Runnable {
             if (!LEGAL_KEYS.contains(newestPressed)) {
                 newestPressed = lastPressed;
             }
-            
+
             Thread.yield();
         }
 
@@ -543,12 +544,12 @@ public class Chip8 implements Runnable {
         int value = registers[nibbles[1]].get();
 
         int firstDigit = value / 100;
-        int secondDigit = (value % 100) /10;
+        int secondDigit = (value % 100) / 10;
         int thirdDigit = value % 10;
 
         int address = indexRegister.get();
 
-        memory.set(address,     firstDigit);
+        memory.set(address, firstDigit);
         memory.set(address + 1, secondDigit);
         memory.set(address + 2, thirdDigit);
     }
@@ -624,7 +625,7 @@ public class Chip8 implements Runnable {
                 }
 
                 int bitOffset = x - Xcoord;
-                int currentBit = (currentPixelRow & (1 << BYTE_SIZE - bitOffset)) >>>  BYTE_SIZE - bitOffset;
+                int currentBit = (currentPixelRow & (1 << BYTE_SIZE - bitOffset)) >>> BYTE_SIZE - bitOffset;
                 if (currentBit == 1) {
                     wasAnyPixelTurnedOff |= display.flipPixel(x, y);
                 }
@@ -633,9 +634,9 @@ public class Chip8 implements Runnable {
         }
 
         if (wasAnyPixelTurnedOff) {
-            registers[VF_REGISTER].set(1);
+            registers[VF_REGISTER_INDEX].set(1);
         } else {
-            registers[VF_REGISTER].set(0);
+            registers[VF_REGISTER_INDEX].set(0);
         }
 
         display.update();
