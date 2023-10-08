@@ -1,10 +1,12 @@
-package bg.example.ROM;
+package bg.example.rom;
+
+import bg.example.memory.Memory;
 
 import java.nio.file.Path;
 
 @FunctionalInterface
 public interface ROMLoader {
 
-    void load(Path path, int[] memory, int offset);
+    void load(Path path, Memory memory, int offset);
 
 }

@@ -1,16 +1,20 @@
-package bg.example;
+package bg.example.chip;
 
 import bg.example.clock.Clock;
 import bg.example.counter.Counter;
 import bg.example.display.Display;
+import bg.example.font.FontLoader;
 import bg.example.keyboard.KeyboardInformation;
 import bg.example.memory.Memory;
 import bg.example.register.Register;
+import bg.example.rom.ROMLoader;
 import javafx.scene.input.KeyCode;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
@@ -18,36 +22,46 @@ import java.util.function.Consumer;
 
 public class Chip8 implements Runnable {
 
-    private static final byte BYTE_SIZE = 8;
-    private static final byte NIBBLE_SHIFT_OFFSET = 4;
+    public static final byte BYTE_SIZE = 8;
+    public static final byte NIBBLE_SHIFT_OFFSET = 4;
 
-    private static final byte DISPLAY_WIDTH = 64;
-    private static final byte DISPLAY_HEIGHT = 32;
+    public static final byte DISPLAY_WIDTH = 64;
+    public static final byte DISPLAY_HEIGHT = 32;
 
-    private static final int VF_REGISTER_INDEX = 15;
+    public static final int VF_REGISTER_INDEX = 15;
 
-    private static final Set<KeyCode> LEGAL_KEYS;
+    public static final int NORMAL_REGISTER_BITS = 8;
+    public static final int INDEX_REGISTER_BITS = 16;
+    public static final int NORMAL_REGISTERS_COUNT = 16;
+
+    public static final int TIMER_FREQUENCY = 60;
+
+    public static final int FIRST_INSTRUCTION_OFFSET = 0x200;
+    public static final int CHIP8_MEMORY_SIZE = 4096;
+    public static final int FONT_OFFSET = 0;
+
+    public static final Set<KeyCode> LEGAL_KEYS;
 
     static {
-        LEGAL_KEYS = new HashSet<>() {
-            {
-                add(KeyCode.DIGIT0);
-                add(KeyCode.DIGIT1);
-                add(KeyCode.DIGIT2);
-                add(KeyCode.DIGIT3);
-                add(KeyCode.DIGIT4);
-                add(KeyCode.DIGIT5);
-                add(KeyCode.DIGIT6);
-                add(KeyCode.DIGIT7);
-                add(KeyCode.DIGIT8);
-                add(KeyCode.DIGIT9);
-                add(KeyCode.A);
-                add(KeyCode.B);
-                add(KeyCode.C);
-                add(KeyCode.D);
-                add(KeyCode.E);
-                add(KeyCode.F);
-            }};
+        LEGAL_KEYS =
+            Set.of(
+                KeyCode.DIGIT0,
+                KeyCode.DIGIT1,
+                KeyCode.DIGIT2,
+                KeyCode.DIGIT3,
+                KeyCode.DIGIT4,
+                KeyCode.DIGIT5,
+                KeyCode.DIGIT6,
+                KeyCode.DIGIT7,
+                KeyCode.DIGIT8,
+                KeyCode.DIGIT9,
+                KeyCode.A,
+                KeyCode.B,
+                KeyCode.C,
+                KeyCode.D,
+                KeyCode.E,
+                KeyCode.F
+            );
     }
 
     private final Counter programCounter;
@@ -57,6 +71,9 @@ public class Chip8 implements Runnable {
     private final Deque<Integer> programStack;
     private final Clock clock;
     private final Memory memory;
+
+    private final FontLoader fontLoader;
+    private final ROMLoader romLoader;
 
     private final Display display;
     private final KeyboardInformation keyboardInformation;
@@ -68,20 +85,20 @@ public class Chip8 implements Runnable {
     private final Map<Integer, Consumer<int[]>> opcodes8xyn;
     private final Map<Integer, Consumer<int[]>> opcodesFxnn;
 
-    public Chip8(Counter programCounter, Counter delayCounter, Counter soundCounter,
-                 Deque<Integer> programStack, Clock clock, Memory memory, Display display,
-                 KeyboardInformation keyboardInformation, Register[] registers, Register indexRegister) {
-        this.programCounter = programCounter;
-        this.delayCounter = delayCounter;
-        this.soundCounter = soundCounter;
-        this.programStack = programStack;
-        this.clock = clock;
-        this.memory = memory;
-        this.display = display;
-        this.keyboardInformation = keyboardInformation;
-        this.registers = registers;
-        this.indexRegister = indexRegister;
+    public Chip8(Chip8Properties properties) {
+        this.programCounter = properties.programCounter();
+        this.delayCounter = properties.delayCounter();
+        this.soundCounter = properties.soundCounter();
+        this.clock = properties.clock();
+        this.memory = properties.memory();
+        this.fontLoader = properties.fontLoader();
+        this.romLoader = properties.romLoader();
+        this.display = properties.display();
+        this.keyboardInformation = properties.keyboardInformation();
+        this.registers = properties.registers();
+        this.indexRegister = properties.indexRegister();
 
+        programStack = new ArrayDeque<>();
         opcodes = new HashMap<>();
         opcodes8xyn = new HashMap<>();
         opcodesFxnn = new HashMap<>();
@@ -511,7 +528,7 @@ public class Chip8 implements Runnable {
         while (lastPressed == newestPressed) {
             newestPressed = keyboardInformation.getLastPressedKey();
 
-            if (!LEGAL_KEYS.contains(newestPressed)) {
+            if (newestPressed != null && !LEGAL_KEYS.contains(newestPressed)) {
                 newestPressed = lastPressed;
             }
 
@@ -720,6 +737,11 @@ public class Chip8 implements Runnable {
         while (true) {
             runOneCycle();
         }
+    }
+
+    public void load(Path path) {
+        fontLoader.load(memory, Chip8.FONT_OFFSET);
+        romLoader.load(path, memory, Chip8.FIRST_INSTRUCTION_OFFSET);
     }
 
 }

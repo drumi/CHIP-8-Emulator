@@ -1,6 +1,7 @@
 package bg.example.display;
 
 import bg.example.keyboard.Keyboard;
+
 import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -13,22 +14,27 @@ public class WindowDisplay extends BaseDisplay {
     private static final int PIXEL_HEIGHT = 10;
     private static final int PIXEL_WIDTH = 10;
 
-    private static final int WINDOW_HEIGHT = 320 + 4 * PIXEL_HEIGHT;
-    private static final int WINDOW_WIDTH = 640 + 4 * PIXEL_WIDTH;
+    private static final int BORDER_SPACE_PIXEL_SIZE = 4;
 
-    private static final String DISPLAY_TITLE = "Chip-8 Emulator";
+    private final int windowHeight;
+    private final int windowWidth;
+    private final String title;
 
     private final Stage stage;
     private final Keyboard keyboard;
 
-    public WindowDisplay(boolean[][] pixels, Stage stage, Keyboard keyboard) {
+    public WindowDisplay(boolean[][] pixels, Stage stage, Keyboard keyboard, String title) {
         super(pixels);
         this.stage = stage;
         this.keyboard = keyboard;
+        this.title = title;
 
-        stage.setHeight(WINDOW_HEIGHT);
-        stage.setWidth(WINDOW_WIDTH);
-        stage.setTitle(DISPLAY_TITLE);
+        windowHeight = (pixels.length  + BORDER_SPACE_PIXEL_SIZE) * PIXEL_HEIGHT;
+        windowWidth = (pixels[0].length + BORDER_SPACE_PIXEL_SIZE) * PIXEL_WIDTH;
+
+        stage.setHeight(windowHeight);
+        stage.setWidth(windowWidth);
+        stage.setTitle(title);
         stage.resizableProperty().setValue(Boolean.FALSE);
     }
 
@@ -38,12 +44,12 @@ public class WindowDisplay extends BaseDisplay {
         Group group = new Group();
         Scene scene = new Scene(group);
 
-        scene.setOnKeyPressed(ke ->
-            keyboard.press(ke.getCode())
+        scene.setOnKeyPressed(
+            ke -> keyboard.press(ke.getCode())
         );
 
-        scene.setOnKeyReleased(ke ->
-            keyboard.release(ke.getCode())
+        scene.setOnKeyReleased(
+            ke -> keyboard.release(ke.getCode())
         );
 
         for (int y = 0; y < pixels.length; y++) {

@@ -4,7 +4,6 @@ import javafx.scene.input.KeyCode;
 
 import java.util.Map;
 
-
 /**
  * Class used for remapping of keys
  */

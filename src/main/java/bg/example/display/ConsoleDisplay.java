@@ -1,6 +1,5 @@
 package bg.example.display;
 
-
 /**
  * Test class provided for debugging
  */
