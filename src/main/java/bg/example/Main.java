@@ -26,11 +26,11 @@ public class Main extends Application {
 
         try (var ctx = new AnnotationConfigApplicationContext()) {
             ctx.registerBean("stage", Stage.class, () -> stage);
+            ctx.registerBean("programLocation", String.class, () -> chipProgramLocation);
             ctx.register(ProjectConfig.class);
             ctx.refresh();
 
-            Chip8 chip = ctx.getBean(Chip8.class);
-            chip.load(Path.of(chipProgramLocation));
+            Chip8 chip = ctx.getBean(Chip8.class, stage);
 
             var thread = new Thread(chip);
 

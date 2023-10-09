@@ -1,4 +1,4 @@
-package bg.example.font;
+package bg.example.loader.font;
 
 import bg.example.memory.Memory;
 

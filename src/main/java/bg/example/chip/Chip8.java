@@ -3,14 +3,14 @@ package bg.example.chip;
 import bg.example.clock.Clock;
 import bg.example.counter.Counter;
 import bg.example.display.Display;
-import bg.example.font.FontLoader;
+import bg.example.loader.font.FontLoader;
 import bg.example.keyboard.KeyboardInformation;
+import bg.example.loader.program.ProgramLoader;
 import bg.example.memory.Memory;
 import bg.example.register.Register;
-import bg.example.rom.ROMLoader;
+import bg.example.loader.rom.ROMLoader;
 import javafx.scene.input.KeyCode;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -72,8 +72,7 @@ public class Chip8 implements Runnable {
     private final Clock clock;
     private final Memory memory;
 
-    private final FontLoader fontLoader;
-    private final ROMLoader romLoader;
+    private final ProgramLoader programLoader;
 
     private final Display display;
     private final KeyboardInformation keyboardInformation;
@@ -91,8 +90,7 @@ public class Chip8 implements Runnable {
         this.soundCounter = properties.soundCounter();
         this.clock = properties.clock();
         this.memory = properties.memory();
-        this.fontLoader = properties.fontLoader();
-        this.romLoader = properties.romLoader();
+        this.programLoader = properties.programLoader();
         this.display = properties.display();
         this.keyboardInformation = properties.keyboardInformation();
         this.registers = properties.registers();
@@ -106,6 +104,8 @@ public class Chip8 implements Runnable {
         initOpcodesMap();
         initOpcodes8xynMap();
         initOpcodesFxnnMap();
+
+        programLoader.load(memory);
     }
 
     private void initOpcodesMap() {
@@ -738,10 +738,4 @@ public class Chip8 implements Runnable {
             runOneCycle();
         }
     }
-
-    public void load(Path path) {
-        fontLoader.load(memory, Chip8.FONT_OFFSET);
-        romLoader.load(path, memory, Chip8.FIRST_INSTRUCTION_OFFSET);
-    }
-
 }

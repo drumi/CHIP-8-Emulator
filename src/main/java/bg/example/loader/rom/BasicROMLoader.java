@@ -1,4 +1,4 @@
-package bg.example.rom;
+package bg.example.loader.rom;
 
 import bg.example.memory.Memory;
 

@@ -7,22 +7,21 @@ import bg.example.clock.SimpleClock;
 import bg.example.counter.Counter;
 import bg.example.counter.ReducingCounter;
 import bg.example.counter.SimpleCounter;
-import bg.example.display.ConsoleDisplay;
 import bg.example.display.Display;
 import bg.example.display.WindowDisplay;
-import bg.example.font.BasicFontLoader;
-import bg.example.font.FontLoader;
+import bg.example.loader.font.BasicFontLoader;
+import bg.example.loader.font.FontLoader;
 import bg.example.keyboard.Keyboard;
 import bg.example.keyboard.KeyboardProxy;
+import bg.example.loader.program.ProgramLoader;
 import bg.example.memory.Memory;
 import bg.example.memory.SimpleMemory;
 import bg.example.register.Register;
 import bg.example.register.SimpleRegister;
-import bg.example.rom.BasicROMLoader;
-import bg.example.rom.ROMLoader;
+import bg.example.loader.rom.BasicROMLoader;
+import bg.example.loader.rom.ROMLoader;
 import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -30,6 +29,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 
+import java.nio.file.Path;
 import java.util.Map;
 
 @Configuration
@@ -95,6 +95,15 @@ public class ProjectConfig {
     }
 
     @Bean
+    @Scope("prototype")
+    public ProgramLoader programLoader(String programLocation) {
+        return memory -> {
+            fontLoader().load(memory, Chip8.FONT_OFFSET);
+            romLoader().load(Path.of(programLocation), memory, Chip8.FIRST_INSTRUCTION_OFFSET);
+        };
+    }
+
+    @Bean
     public Display windowDisplay(Stage stage) {
         return new WindowDisplay(
             new boolean[Chip8.DISPLAY_HEIGHT][Chip8.DISPLAY_WIDTH],
@@ -122,7 +131,7 @@ public class ProjectConfig {
     }
 
     @Bean
-    public Chip8 chip8(Stage stage) {
+    public Chip8 chip8(ProgramLoader loader, Stage stage) {
         Register[] registers = new Register[Chip8.NORMAL_REGISTERS_COUNT];
 
         for (int i = 0; i < registers.length; i++) {
@@ -136,8 +145,7 @@ public class ProjectConfig {
                 reducingCounter(),
                 clock(),
                 memory(),
-                fontLoader(),
-                romLoader(),
+                loader,
                 windowDisplay(stage),
                 keyboard(),
                 registers,
